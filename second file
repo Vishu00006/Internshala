@@ -1,0 +1,52 @@
+import requests
+from bs4 import BeautifulSoup
+
+base_url = "https://www.amazon.in/s"
+search_query = "bags"
+num_pages = 20
+
+for page in range(1, num_pages + 1):
+    params = {
+        "k": search_query,
+        "page": page
+    }
+    
+    response = requests.get(base_url, params=params)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.content, "html.parser")
+        
+        product_list = soup.find_all("div", class_="s-result-item")
+        
+        for product in product_list:
+            product_url = "https://www.amazon.in" + product.find("a", class_="a-link-normal")["href"]
+            product_name = product.find("span", class_="a-text-normal").text
+            product_price = product.find("span", class_="a-offscreen").text
+            rating = product.find("span", class_="a-icon-alt")
+            num_reviews = product.find("span", {"aria-label": "customer reviews"}).text.split()[0]
+            
+            # Extracting product details from the product page
+            product_response = requests.get(product_url)
+            if product_response.status_code == 200:
+                product_soup = BeautifulSoup(product_response.content, "html.parser")
+                description = product_soup.find("div", id="productDescription").text.strip()
+                asin = product_soup.find("th", string="ASIN").find_next("td").text.strip()
+                product_description = product_soup.find("div", {"data-asin": asin}).text.strip()
+                manufacturer = product_soup.find("a", {"id": "bylineInfo"}).text.strip()
+                
+                print("Product URL:", product_url)
+                print("Product Name:", product_name)
+                print("Product Price:", product_price)
+                if rating:
+                    print("Rating:", rating.text)
+                else:
+                    print("Rating: Not available")
+                print("Number of Reviews:", num_reviews)
+                print("Description:", description)
+                print("ASIN:", asin)
+                print("Product Description:", product_description)
+                print("Manufacturer:", manufacturer)
+                
+            else:
+                print("Failed to retrieve product page for:", product_url)
+    else:
+        print("Failed to retrieve page:", page)
