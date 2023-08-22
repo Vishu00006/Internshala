@@ -1,38 +1,36 @@
-# Internshala
-For internship assissgnment
 import requests
 from bs4 import BeautifulSoup
 
 base_url = "https://www.amazon.in/s"
-query_params = {
-    "k": "bags",
-    "crid": "2M096C61O4MLT",
-    "qid": "1653308124",
-    "sprefix": "ba,aps,283",
-    "ref": "sr_pg_1"
-}
-
-# Number of pages to scrape
+search_query = "bags"
 num_pages = 20
 
-for page_number in range(1, num_pages + 1):
-    query_params["page"] = page_number
-    response = requests.get(base_url, params=query_params)
+for page in range(1, num_pages + 1):
+    params = {
+        "k": search_query,
+        "page": page
+    }
     
+    response = requests.get(base_url, params=params)
     if response.status_code == 200:
         soup = BeautifulSoup(response.content, "html.parser")
-        # Extract and process the product listings from the soup
         
-        # You'll need to identify the HTML structure of the product listings
-        # and extract the relevant information using BeautifulSoup's methods
+        product_list = soup.find_all("div", class_="s-result-item")
         
-        # Example: extracting product titles
-        product_titles = soup.find_all("span", class_="a-text-normal")
-        for title in product_titles:
-            print(title.text)
+        for product in product_list:
+            product_url = product.find("a", class_="a-link-normal")["href"]
+            product_name = product.find("span", class_="a-text-normal").text
+            product_price = product.find("span", class_="a-offscreen").text
+            rating = product.find("span", class_="a-icon-alt")
+            num_reviews = product.find("span", {"aria-label": "customer reviews"}).text.split()[0]
+            
+            print("Product URL:", product_url)
+            print("Product Name:", product_name)
+            print("Product Price:", product_price)
+            print("Rating:", rating)
+            print("Number of Reviews:", num_reviews)
+            
     else:
-        print(f"Failed to fetch page {page_number}")
+        print("Failed to retrieve page:", page)
 
-    # Add a delay to avoid overloading the server
-    time.sleep(2)  # Import the time module for this
     
